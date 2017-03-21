@@ -4,39 +4,112 @@ var request = require('request');
 var cheerio = require('cheerio');
 var app     = express();
 
-app.get('/scrape', function(req, res){
-  // Let's scrape Anchorman 2
-  url = 'http://www.imdb.com/title/tt1229340/';
-
-  request(url, function(error, response, html){
+app.get('/scrape/imdb/top250', function(req, res){
+  url = 'http://www.imdb.com/chart/top';
+  var options={};
+  options.proxy="http://10.3.100.207:8080";
+  request(url,options, function(error, response, html){
     if(!error){
       var $ = cheerio.load(html);
-
-      var title, release, rating;
-      var json = { title : "", release : "", rating : ""};
-
-      $('.title_wrapper').filter(function(){
-        var data = $(this);
-        title = data.children().first().text().trim();
-        release = data.children().last().children().last().text().trim();
-
-        json.title = title;
-        json.release = release;
-      })
-
-      $('.ratingValue').filter(function(){
-        var data = $(this);
-        rating = data.text().trim();
-
-        json.rating = rating;
-      })
+      var data;
+      var info;
+      var movieTitle=[];
+      var movieYear=[];
+      var movieRating=[];
+        $('.titleColumn').each(function(i, elem) {
+          movieTitle[i] = $(this).children().first().text();
+          movieYear[i] = $(this).children().last().text();
+        });
+        $('.imdbRating').each(function(i, elem) {
+          movieRating[i] = $(this).children().first().text();
+        });
+      // Creating json object
+      var data=[];
+      var obj={};
+      for(i=0;i<movieYear.length;i++){
+        obj={};
+        obj.title=movieTitle[i];
+        obj.year=movieYear[i];
+        obj.rating=movieRating[i];
+        data.push(obj);
+      }
     }
 
-    fs.writeFile('output.json', JSON.stringify(json, null, 4), function(err){
-      console.log('File successfully written! - Check your project directory for the output.json file');
+    fs.writeFile('top250.json', JSON.stringify(data), function(err){
+      console.log('File successfully written! - Check your project directory for the top250.json file');
     })
+    res.json(data);
+  })
+})
 
-    res.send('Check your console!')
+
+app.get('/scrape/imdb/genre=:genre&&page=:page', function(req, res){
+  url = 'http://www.imdb.com/search/title?genres='+req.params.genre+'&page='+req.params.page;
+  console.log(url);
+  var options={};
+  options.proxy="http://10.3.100.207:8080";
+  request(url,options, function(error, response, html){
+    if(!error){
+      var $ = cheerio.load(html);
+      var data;
+      var info;
+      var movieTitle=[];
+      var movieYear=[];
+      var movieRating=[];
+      var movieGenre=[];
+      var movieDesc=[];
+      var movieStars=[];
+      var movieDirector=[];
+        $('.lister-item-content').each(function(i, elem) {
+          movieDesc[i]=$(this).children().first().next().next().next().text().trim();
+          movieStars[i]=$(this).children().first().next().next().next().next().text().trim();
+          //movieStars[i]= movieStars[i].replace("Stars:", "");
+          var n = movieStars[i].indexOf("Director");
+          if(n==-1){
+            movieStars[i]= movieStars[i].replace("Stars:", "");
+            movieStars[i]= movieStars[i].replace(/(\r\n|\n|\r)/gm, "");
+            movieDirector[i]=null;
+          }else{
+            x=movieStars[i].indexOf("|");
+            dir= movieStars[i].slice(0, x-1);
+            stars= movieStars[i].slice(x+1, movieStars[i].length);
+            movieStars[i]= stars.replace("Stars:", "");
+            movieStars[i]= movieStars[i].replace(/(\r\n|\n|\r)/gm, "").trim();
+            movieDirector[i]= dir.replace("Director:", "");
+            movieDirector[i]= movieDirector[i].replace("Directors:", "");
+            movieDirector[i]=movieDirector[i].replace(/(\r\n|\n|\r)/gm, "").trim();
+          }
+        });
+        $('.genre').each(function(i, elem) {
+          movieGenre[i] = $(this).text().trim();
+        });
+        $('.ratings-imdb-rating').each(function(i, elem) {
+          movieRating[i] = $(this).children().last().text();
+        });
+        $('.lister-item-header').each(function(i, elem) {
+          movieTitle[i] = $(this).children().first().next().text();
+          movieYear[i] = $(this).children().last().text();
+        });
+      // Creating json object
+      var data=[];
+      var obj={};
+      for(i=0;i<movieYear.length;i++){
+        obj={};
+        obj.title=movieTitle[i];
+        obj.year=movieYear[i];
+        obj.rating=movieRating[i];
+        obj.genres=movieGenre[i];
+        obj.description=movieDesc[i];
+        obj.stars=movieStars[i];
+        obj.directors=movieDirector[i];
+        data.push(obj);
+      }
+    }
+
+    fs.writeFile('genre.json', JSON.stringify(data), function(err){
+      console.log('File successfully written! - Check your project directory for the top250.json file');
+    })
+    res.json(data);
   })
 })
 
