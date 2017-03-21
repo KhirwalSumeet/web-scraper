@@ -61,8 +61,22 @@ app.get('/scrape/imdb/genre=:genre&&page=:page', function(req, res){
       var movieStars=[];
       var movieDirector=[];
         $('.lister-item-content').each(function(i, elem) {
-          movieDesc[i]=$(this).children().first().next().next().next().text().trim();
-          movieStars[i]=$(this).children().first().next().next().next().next().text().trim();
+          data=$(this).children().first();
+          movieTitle[i] = data.children().first().next().text();
+          movieYear[i] = data.children().last().text();
+          data=data.next();
+
+          if(data.hasClass('text-muted')){
+            movieGenre[i] =data.find($('.genre')).text().trim();
+            data=data.next();
+          }
+          if(data.hasClass('ratings-bar')){
+            movieRating[i]=data.children().first().children().first().next().text().trim();
+            data=data.next();
+          }
+          movieDesc[i]=data.text().trim();
+          data=data.next();
+          movieStars[i]=data.text().trim();
           //movieStars[i]= movieStars[i].replace("Stars:", "");
           var n = movieStars[i].indexOf("Director");
           if(n==-1){
@@ -80,16 +94,7 @@ app.get('/scrape/imdb/genre=:genre&&page=:page', function(req, res){
             movieDirector[i]=movieDirector[i].replace(/(\r\n|\n|\r)/gm, "").trim();
           }
         });
-        $('.genre').each(function(i, elem) {
-          movieGenre[i] = $(this).text().trim();
-        });
-        $('.ratings-imdb-rating').each(function(i, elem) {
-          movieRating[i] = $(this).children().last().text();
-        });
-        $('.lister-item-header').each(function(i, elem) {
-          movieTitle[i] = $(this).children().first().next().text();
-          movieYear[i] = $(this).children().last().text();
-        });
+
       // Creating json object
       var data=[];
       var obj={};
