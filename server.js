@@ -60,9 +60,13 @@ app.get('/scrape/imdb/genre=:genre&&page=:page', function(req, res){
       var movieDesc=[];
       var movieStars=[];
       var movieDirector=[];
+      var movieId=[];
         $('.lister-item-content').each(function(i, elem) {
           data=$(this).children().first();
           movieTitle[i] = data.children().first().next().text();
+          id=data.children().first().next().attr('href');
+          id=id.split("/");
+          movieId[i]=id[2];
           movieYear[i] = data.children().last().text();
           data=data.next();
 
@@ -100,6 +104,7 @@ app.get('/scrape/imdb/genre=:genre&&page=:page', function(req, res){
       var obj={};
       for(i=0;i<movieYear.length;i++){
         obj={};
+        obj.id=movieId[i];
         obj.title=movieTitle[i];
         obj.year=movieYear[i];
         obj.rating=movieRating[i];
