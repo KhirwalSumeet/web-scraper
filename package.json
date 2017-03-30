@@ -1,12 +1,12 @@
 {
   "name"         : "node-web-scrape",
   "version"      : "0.0.1",
-  "description"  : "Scrape le web.",
+  "description"  : "Movie scrapping",
   "main"         : "server.js",
-  "author"       : "Scotch",
+  "author"       : "Sumeet",
   "repository"   : {
     "type" : "git",
-    "url"  : "https://github.com/scotch-io/node-web-scraper"
+    "url"  : "https://github.com/KhirwalSumeet/web-scraper"
   },
   "dependencies" : {
     "express"    : "latest",
