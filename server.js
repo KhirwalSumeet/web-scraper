@@ -144,16 +144,19 @@ app.get('/scrape/imdb/genre=:genre&&page=:page', function(req, res){
   })
 })
 
+
+// Scraping movie reviews from TOI
+
 app.get('/scrape/toi',function(req, res){
     fetchdata(1,[],function (data) {
-        scrapedetails(0,data,[],function(result){
+        scrapedetails(0,data,[],0,function(result){
             fs.writeFile('movies.json', JSON.stringify(result), function(err){
               console.log('File successfully written! - Check your project directory for the top250.json file');
             })
-            res.json(result);
+            
         });
     });
-    
+    res.send("Done");
 });
 
 function fetchdata(count,data,callback){
@@ -166,13 +169,24 @@ function fetchdata(count,data,callback){
             /* Loading HTML */
 
             var $ = cheerio.load(html);
-
+            var left=1;
             $('.mr_listing_left').each(function(i, elem) {
-
+                
                 link=$(this).children().first().attr('href');
-                data.push(link);
+                if(link){
+                    data.push(link);
+                }
+                else
+                    left=0;
             });
-            if(count<2){
+            if(!left){
+                $('.mr_listing_right').each(function(i, elem) {
+                    link=$(this).children().first().children().first().attr('href');
+                    data.push(link);
+                });
+            }
+            if(count<63){
+                console.log("count:"+count);
                 fetchdata(count+1,data,callback);
             }else{
                 callback(data);
@@ -183,17 +197,17 @@ function fetchdata(count,data,callback){
     })
 };
 
-function scrapedetails(i,movies,moviesData,cb){
+function scrapedetails(i,movies,moviesData,last,cb){
     console.log(i);
     url = 'http://www.timesofindia.indiatimes.com'+movies[i];
     var options={};
     options.proxy="http://10.3.100.207:8080";
+    options.timeout=3000;
     request(url,options, function(error, response, html){
         if(!error){
             var $ = cheerio.load(html);
             var obj={};
             $('.flmcasting').each(function(i, elem) {
-
                 tag=$(this).children().first();
 
                 // Fetching name
@@ -231,18 +245,34 @@ function scrapedetails(i,movies,moviesData,cb){
 
 
             });
-            //console.log(obj);
+            $('.Normal').each(function(i, elem) {
+                tag=$(this);
+                review=tag.text();
+                review=review.split(":");
+                review=review[2];
+                obj["Review"]=review;
+                
+
+            });
             moviesData.push(obj);
+            //console.log(obj);
+            
             if(i<movies.length){
-                scrapedetails(i+1,movies,moviesData,cb);
+                scrapedetails(i+1,movies,moviesData,0,cb);
             }else{
                 cb(moviesData);
             }
         }else{
-            scrapedetails(i,movies,moviesData,cb);
+            if(last<3){
+                scrapedetails(i,movies,moviesData,last+1,cb);
+            }else{
+                scrapedetails(i+1,movies,moviesData,0,cb);
+            }
         }
     });
 }
+
+
 app.listen('8081')
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
