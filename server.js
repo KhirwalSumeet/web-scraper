@@ -272,7 +272,93 @@ function scrapedetails(i,movies,moviesData,last,cb){
     });
 }
 
+// Scraping Top India First day movies by year
 
+app.get('/scrape/boi/firstday/start=:start&&end=:end',function(req, res){
+    firstday(parseInt(req.params.start),parseInt(req.params.end),[],function (data) {
+        fs.writeFile('moviesFirstDay.json', JSON.stringify(data), function(err){
+          console.log('File successfully written! - Check your project directory for the top250.json file');
+        })
+    });
+    res.send("Done");
+});
+
+function firstday(year,end,data,cb2){
+    console.log(year);
+    url = 'http://www.boxofficeindia.com/india-first-day.php?year='+year;
+    var options={};
+    options.proxy="http://10.3.100.207:8080";
+    options.timeout=3000;
+    request(url,options, function(error, response, html){
+        if(!error){
+            var $ = cheerio.load(html);
+            
+            $('.boi-listing-rows').each(function(i, elem) {
+                var obj={};
+                tag=$(this).children().first().next();
+                obj["Name"]=tag.children().children().children().last().text();
+                tag=tag.next();
+                obj["Release Date"]=tag.text();
+                tag=tag.next();
+                obj["Screens"]=tag.text();
+                tag=tag.next();
+                obj["Nett Gross"]=tag.text();
+                data.push(obj);
+            });
+            if(year<end){
+                firstday(year+1,end,data,cb2);
+            }else{
+                cb2(data);
+            }
+        }else{
+            firstday(year,end,data,cb2);
+        }
+    });
+}
+
+// Scraping Top India First Week movies by year
+
+app.get('/scrape/boi/firstweek/start=:start&&end=:end',function(req, res){
+    firstday(parseInt(req.params.start),parseInt(req.params.end),[],function (data) {
+        fs.writeFile('moviesFirstWeek.json', JSON.stringify(data), function(err){
+          console.log('File successfully written! - Check your project directory for the top250.json file');
+        })
+    });
+    res.send("Done");
+});
+
+function firstday(year,end,data,cb2){
+    console.log(year);
+    url = 'http://www.boxofficeindia.com/india-first-week.php?year='+year;
+    var options={};
+    options.proxy="http://10.3.100.207:8080";
+    options.timeout=3000;
+    request(url,options, function(error, response, html){
+        if(!error){
+            var $ = cheerio.load(html);
+            
+            $('.boi-listing-rows').each(function(i, elem) {
+                var obj={};
+                tag=$(this).children().first().next();
+                obj["Name"]=tag.children().children().children().last().text();
+                tag=tag.next();
+                obj["Release Date"]=tag.text();
+                tag=tag.next();
+                obj["Screens"]=tag.text();
+                tag=tag.next();
+                obj["Nett Gross"]=tag.text();
+                data.push(obj);
+            });
+            if(year<end){
+                firstday(year+1,end,data,cb2);
+            }else{
+                cb2(data);
+            }
+        }else{
+            firstday(year,end,data,cb2);
+        }
+    });
+}
 app.listen('8081')
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
